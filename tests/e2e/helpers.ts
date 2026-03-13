@@ -1,5 +1,7 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
+const WEEKDAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"] as const;
+
 function formatCalendarMonth(date: Date): string {
   return `${date.getFullYear()}年 ${date.getMonth() + 1}月`;
 }
@@ -30,6 +32,26 @@ export function getFutureDate(offsetDays: number): Date {
   date.setHours(12, 0, 0, 0);
   date.setDate(date.getDate() + offsetDays);
   return date;
+}
+
+export function getNextWeekday(targetWeekday: number, weeksAhead = 0): Date {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+
+  const currentWeekday = date.getDay();
+  let diff = (targetWeekday - currentWeekday + 7) % 7;
+
+  if (diff === 0) {
+    diff = 7;
+  }
+
+  diff += weeksAhead * 7;
+  date.setDate(date.getDate() + diff);
+  return date;
+}
+
+export function getWeekdayLabel(date: Date): string {
+  return WEEKDAY_LABELS[date.getDay()];
 }
 
 export function getCalendarDayButton(page: Page, targetDate: Date): Locator {
@@ -79,6 +101,13 @@ export async function selectCalendarDate(page: Page, targetDate: Date) {
   await getCalendarDayButton(page, targetDate).click();
 }
 
+export async function gotoTab(
+  page: Page,
+  tab: "home" | "calendar" | "settings"
+) {
+  await page.getByTestId(`tab-${tab}`).click();
+}
+
 export async function openTaskDialog(page: Page) {
   await expect(page.getByTestId("open-add-task-dialog")).toBeEnabled({
     timeout: 15_000,
@@ -91,5 +120,5 @@ export async function addTask(page: Page, title: string) {
   await openTaskDialog(page);
   await page.getByTestId("task-title-input").fill(title);
   await page.getByTestId("submit-task-button").click();
-  await expect(page.getByTestId("task-title-input")).toBeHidden();
+  await expect(page.getByRole("dialog")).toBeHidden();
 }

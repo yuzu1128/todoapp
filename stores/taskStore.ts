@@ -1,127 +1,187 @@
 import { create } from "zustand";
 
+import {
+  fromDateKey,
+  fromMonthKey,
+  getTodayDateKey,
+  toMonthKey,
+} from "@/lib/date";
 import { taskRepository } from "@/lib/db";
-import { toDateKey } from "@/lib/date";
+import {
+  buildMarkerDateKeysForMonth,
+  buildTaskListItemsForDate,
+  isDateWithinMonth,
+} from "@/lib/recurrence";
 import { normalizeTaskTitle, validateTaskTitle } from "@/lib/task";
-import type { Task } from "@/lib/types";
+import type { TaskListItem } from "@/lib/types";
 
 interface TaskState {
   error: string | null;
+  items: TaskListItem[];
   loading: boolean;
+  markerDateKeys: string[];
+  markerMonthKey: string;
   mutating: boolean;
-  tasks: Task[];
+  recentTitles: string[];
   selectedDateKey: string;
-  taskDates: string[];
 }
 
 interface TaskActions {
   clearError: () => void;
   createTask: (title: string) => Promise<void>;
-  deleteTask: (id: string) => Promise<void>;
-  initialize: () => Promise<void>;
+  deleteTask: (item: TaskListItem) => Promise<void>;
+  initialize: (dateKey?: string) => Promise<void>;
+  loadMonthMarkers: (month: Date) => Promise<void>;
+  refreshRecentTitles: () => Promise<void>;
   refreshSelectedDate: () => Promise<void>;
   selectDate: (dateKey: string) => Promise<void>;
-  toggleTask: (id: string) => Promise<void>;
+  toggleTask: (item: TaskListItem) => Promise<void>;
 }
 
 type TaskStore = TaskState & TaskActions;
 
-let latestSnapshotRequestId = 0;
-
-const getTodayDate = (): string => {
-  return toDateKey(new Date());
-};
-
-const getErrorMessage = (error: unknown, fallbackMessage: string): string => {
+function getErrorMessage(error: unknown, fallbackMessage: string): string {
   if (error instanceof Error && error.message) {
     return error.message;
   }
 
   return fallbackMessage;
-};
+}
 
-const loadSnapshot = async (selectedDateKey: string) => {
-  const [tasks, taskDates] = await Promise.all([
-    taskRepository.getByDate(selectedDateKey),
-    taskRepository.getTaskDates(),
+async function loadDateView(dateKey: string) {
+  const [manualTasks, rules, overrides] = await Promise.all([
+    taskRepository.getTasksForDate(dateKey),
+    taskRepository.getEnabledRecurringRules(),
+    taskRepository.getRecurringOverridesForDate(dateKey),
   ]);
 
-  return { tasks, taskDates };
-};
-
-const syncSnapshot = async (
-  dateKey: string,
-  set: (partial: Partial<TaskStore>) => void,
-  fallbackMessage: string
-) => {
-  const requestId = ++latestSnapshotRequestId;
-
-  set({
-    error: null,
-    loading: true,
-    selectedDateKey: dateKey,
+  return buildTaskListItemsForDate({
+    dateKey,
+    manualTasks,
+    overrides,
+    rules,
   });
+}
 
-  try {
-    const snapshot = await loadSnapshot(dateKey);
+async function loadMarkerSnapshot(monthKey: string) {
+  const month = fromMonthKey(monthKey);
+  const [manualTasks, rules, overrides] = await Promise.all([
+    taskRepository.getManualTasksInMonth(month),
+    taskRepository.getEnabledRecurringRules(),
+    taskRepository.getRecurringOverridesInMonth(month),
+  ]);
 
-    if (requestId === latestSnapshotRequestId) {
-      set({
-        loading: false,
-        selectedDateKey: dateKey,
-        ...snapshot,
-      });
-    }
-  } catch (error) {
-    if (requestId === latestSnapshotRequestId) {
-      set({
-        error: getErrorMessage(error, fallbackMessage),
-        loading: false,
-        selectedDateKey: dateKey,
-      });
-    }
-
-    throw error;
-  }
-};
+  return buildMarkerDateKeysForMonth({
+    manualTasks,
+    overrides,
+    rules,
+    month,
+  });
+}
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
   error: null,
+  items: [],
   loading: true,
+  markerDateKeys: [],
+  markerMonthKey: toMonthKey(new Date()),
   mutating: false,
-  tasks: [],
-  selectedDateKey: getTodayDate(),
-  taskDates: [],
+  recentTitles: [],
+  selectedDateKey: getTodayDateKey(),
 
   clearError: () => {
     set({ error: null });
   },
 
-  initialize: async () => {
-    await syncSnapshot(
-      get().selectedDateKey,
-      set,
-      "今日のタスクを読み込めませんでした。"
-    );
+  initialize: async (dateKey) => {
+    const nextDateKey = dateKey ?? get().selectedDateKey;
+    const monthKey = toMonthKey(fromDateKey(nextDateKey));
+
+    set({
+      error: null,
+      loading: true,
+      selectedDateKey: nextDateKey,
+    });
+
+    try {
+      const [items, recentTitles, markerDateKeys] = await Promise.all([
+        loadDateView(nextDateKey),
+        taskRepository.getRecentTaskTitles(8),
+        loadMarkerSnapshot(monthKey),
+      ]);
+
+      set({
+        items,
+        loading: false,
+        markerDateKeys,
+        markerMonthKey: monthKey,
+        recentTitles,
+        selectedDateKey: nextDateKey,
+      });
+    } catch (error) {
+      set({
+        error: getErrorMessage(error, "タスクを読み込めませんでした。"),
+        loading: false,
+        selectedDateKey: nextDateKey,
+      });
+    }
   },
 
-  selectDate: async (dateKey: string) => {
-    await syncSnapshot(
-      dateKey,
-      set,
-      "選択した日のタスクを読み込めませんでした。"
-    );
+  loadMonthMarkers: async (month) => {
+    const markerMonthKey = toMonthKey(month);
+
+    try {
+      const markerDateKeys = await loadMarkerSnapshot(markerMonthKey);
+
+      set({
+        markerDateKeys,
+        markerMonthKey,
+      });
+    } catch (error) {
+      set({
+        error: getErrorMessage(error, "カレンダーマーカーを読み込めませんでした。"),
+      });
+    }
+  },
+
+  refreshRecentTitles: async () => {
+    const recentTitles = await taskRepository.getRecentTaskTitles(8);
+    set({ recentTitles });
+  },
+
+  selectDate: async (dateKey) => {
+    set({
+      error: null,
+      loading: true,
+      selectedDateKey: dateKey,
+    });
+
+    try {
+      const items = await loadDateView(dateKey);
+
+      set({
+        items,
+        loading: false,
+        selectedDateKey: dateKey,
+      });
+
+      if (!isDateWithinMonth(dateKey, fromMonthKey(get().markerMonthKey))) {
+        await get().loadMonthMarkers(fromDateKey(dateKey));
+      }
+    } catch (error) {
+      set({
+        error: getErrorMessage(error, "選択した日のタスクを読み込めませんでした。"),
+        loading: false,
+        selectedDateKey: dateKey,
+      });
+    }
   },
 
   refreshSelectedDate: async () => {
-    await syncSnapshot(
-      get().selectedDateKey,
-      set,
-      "タスク一覧を最新の状態に更新できませんでした。"
-    );
+    await get().selectDate(get().selectedDateKey);
   },
 
-  createTask: async (title: string) => {
+  createTask: async (title) => {
     const validationError = validateTaskTitle(title);
 
     if (validationError) {
@@ -136,19 +196,30 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
     try {
       const normalizedTitle = normalizeTaskTitle(title);
-      const { selectedDateKey } = get();
 
-      await taskRepository.add({
+      await taskRepository.addTask({
         title: normalizedTitle,
-        date: selectedDateKey,
+        date: get().selectedDateKey,
         completed: false,
       });
+      await taskRepository.upsertHistoryTitle(normalizedTitle);
 
-      await syncSnapshot(
-        selectedDateKey,
-        set,
-        "タスク一覧を更新できませんでした。"
-      );
+      const selectedDateKey = get().selectedDateKey;
+      const [items, recentTitles] = await Promise.all([
+        loadDateView(selectedDateKey),
+        taskRepository.getRecentTaskTitles(8),
+      ]);
+
+      const nextState: Partial<TaskStore> = {
+        items,
+        recentTitles,
+      };
+
+      if (isDateWithinMonth(selectedDateKey, fromMonthKey(get().markerMonthKey))) {
+        nextState.markerDateKeys = await loadMarkerSnapshot(get().markerMonthKey);
+      }
+
+      set(nextState);
     } catch (error) {
       const message = getErrorMessage(error, "タスクを追加できませんでした。");
       set({ error: message });
@@ -158,24 +229,27 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
 
-  toggleTask: async (id: string) => {
+  toggleTask: async (item) => {
     set({
       error: null,
       mutating: true,
     });
 
     try {
-      await taskRepository.toggle(id);
-      await syncSnapshot(
-        get().selectedDateKey,
-        set,
-        "タスク一覧を更新できませんでした。"
-      );
+      if (item.source === "manual" && item.taskId) {
+        await taskRepository.toggleTask(item.taskId);
+      } else if (item.source === "recurring" && item.ruleId) {
+        await taskRepository.setRecurringOccurrenceCompleted(
+          item.ruleId,
+          item.dateKey,
+          !item.completed
+        );
+      }
+
+      const items = await loadDateView(get().selectedDateKey);
+      set({ items });
     } catch (error) {
-      const message = getErrorMessage(
-        error,
-        "タスクの状態を更新できませんでした。"
-      );
+      const message = getErrorMessage(error, "タスクの状態を更新できませんでした。");
       set({ error: message });
       throw new Error(message);
     } finally {
@@ -183,19 +257,29 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
 
-  deleteTask: async (id: string) => {
+  deleteTask: async (item) => {
     set({
       error: null,
       mutating: true,
     });
 
     try {
-      await taskRepository.delete(id);
-      await syncSnapshot(
-        get().selectedDateKey,
-        set,
-        "タスク一覧を更新できませんでした。"
-      );
+      if (item.source === "manual" && item.taskId) {
+        await taskRepository.deleteTask(item.taskId);
+      } else if (item.source === "recurring" && item.ruleId) {
+        await taskRepository.dismissRecurringOccurrence(item.ruleId, item.dateKey);
+      }
+
+      const selectedDateKey = get().selectedDateKey;
+      const nextState: Partial<TaskStore> = {
+        items: await loadDateView(selectedDateKey),
+      };
+
+      if (isDateWithinMonth(item.dateKey, fromMonthKey(get().markerMonthKey))) {
+        nextState.markerDateKeys = await loadMarkerSnapshot(get().markerMonthKey);
+      }
+
+      set(nextState);
     } catch (error) {
       const message = getErrorMessage(error, "タスクを削除できませんでした。");
       set({ error: message });

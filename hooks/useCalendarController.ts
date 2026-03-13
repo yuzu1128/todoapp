@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { addDays } from "date-fns";
 
 import {
   formatSelectedDateLabel,
@@ -12,9 +11,10 @@ import {
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { useTaskStore } from "@/stores/taskStore";
 
-export function useHomeController() {
-  const todayKey = getTodayDateKey();
+export function useCalendarController() {
   const items = useTaskStore((state) => state.items);
+  const selectedDateKey = useTaskStore((state) => state.selectedDateKey);
+  const markerDateKeys = useTaskStore((state) => state.markerDateKeys);
   const recentTitles = useTaskStore((state) => state.recentTitles);
   const loading = useTaskStore((state) => state.loading);
   const mutating = useTaskStore((state) => state.mutating);
@@ -22,34 +22,45 @@ export function useHomeController() {
   const initialize = useTaskStore((state) => state.initialize);
   const clearError = useTaskStore((state) => state.clearError);
   const createTask = useTaskStore((state) => state.createTask);
-  const toggleTask = useTaskStore((state) => state.toggleTask);
   const deleteTask = useTaskStore((state) => state.deleteTask);
-  const selectDate = useTaskStore((state) => state.selectDate);
+  const loadMonthMarkers = useTaskStore((state) => state.loadMonthMarkers);
   const refreshSelectedDate = useTaskStore((state) => state.refreshSelectedDate);
+  const selectDate = useTaskStore((state) => state.selectDate);
+  const toggleTask = useTaskStore((state) => state.toggleTask);
   const { play } = useSoundEffects();
 
+  const selectedDate = fromDateKey(selectedDateKey);
+  const [currentMonth, setCurrentMonth] = useState(selectedDate);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const todayDate = fromDateKey(todayKey);
 
   useEffect(() => {
-    void initialize(todayKey);
-  }, [initialize, todayKey]);
+    void initialize(selectedDateKey);
+    setCurrentMonth(fromDateKey(selectedDateKey));
+  }, [initialize, selectedDateKey]);
 
-  const activeItems = items.filter((item) => !item.completed).slice(0, 5);
-  const completedItems = items.filter((item) => item.completed).slice(0, 3);
+  const activeItems = items.filter((item) => !item.completed);
+  const completedItems = items.filter((item) => item.completed);
 
   return {
     activeItems,
+    clearError,
     completedItems,
+    currentMonth,
     error,
     isDialogOpen,
     loading,
+    markerDateKeys,
     mutating,
     recentTitles,
-    selectedDateLabel: formatSelectedDateLabel(todayDate),
-    todayDate,
-    todayKey,
+    selectedDate,
+    selectedDateKey,
+    selectedDateLabel: formatSelectedDateLabel(selectedDate),
+    setCurrentMonth: (date: Date) => {
+      setCurrentMonth(date);
+      void loadMonthMarkers(date);
+    },
     totalTasks: items.length,
+    completedTaskCount: completedItems.length,
     openDialog: () => {
       clearError();
       setIsDialogOpen(true);
@@ -58,9 +69,19 @@ export function useHomeController() {
     closeDialog: () => {
       clearError();
       setIsDialogOpen(false);
-      play("dialog");
     },
-    clearError,
+    handleDateSelect: async (date: Date) => {
+      setCurrentMonth(date);
+      await loadMonthMarkers(date);
+      await selectDate(toDateKey(date));
+    },
+    handleTodayClick: async () => {
+      const todayKey = getTodayDateKey();
+      const today = fromDateKey(todayKey);
+      setCurrentMonth(today);
+      await loadMonthMarkers(today);
+      await selectDate(todayKey);
+    },
     handleAddTask: async (title: string) => {
       try {
         await createTask(title);
@@ -92,13 +113,6 @@ export function useHomeController() {
     },
     handleRetry: () => {
       void refreshSelectedDate();
-    },
-    upcomingDateLabels: [addDays(todayDate, 1), addDays(todayDate, 2)].map((date) => ({
-      date,
-      dateKey: toDateKey(date),
-    })),
-    focusToday: async () => {
-      await selectDate(todayKey);
     },
   };
 }

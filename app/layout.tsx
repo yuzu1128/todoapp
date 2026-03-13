@@ -1,22 +1,31 @@
+import type { ReactNode } from "react";
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Orbitron, Space_Grotesk } from "next/font/google";
 
 import { PwaRegister } from "@/components/pwa/PwaRegister";
 
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-body",
+});
+
+const orbitron = Orbitron({
+  subsets: ["latin"],
+  variable: "--font-display",
+});
 
 export const viewport: Viewport = {
-  themeColor: "#3B82F6",
+  themeColor: "#07111f",
 };
 
 export const metadata: Metadata = {
   title: "ToDoApp",
-  description: "PWA ToDo Application",
+  description: "A futuristic PWA task hub with history and recurring routines.",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "ToDoApp",
   },
   icons: {
@@ -31,11 +40,11 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
   return (
     <html lang="ja">
-      <body className={inter.className}>
+      <body className={`${spaceGrotesk.variable} ${orbitron.variable}`}>
         <PwaRegister />
         {children}
       </body>

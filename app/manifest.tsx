@@ -6,11 +6,11 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "ToDoApp",
     short_name: "ToDoApp",
-    description: "PWA ToDo Application",
+    description: "A futuristic PWA task hub with recurring routines and quick history.",
     start_url: "/",
     display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#3B82F6",
+    background_color: "#07111f",
+    theme_color: "#07111f",
     icons: [
       {
         src: "/icon/icon-192.png",
