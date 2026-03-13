@@ -1,11 +1,35 @@
 import { expect, test } from "@playwright/test";
 
 import {
+  formatMonthLabel,
+  formatSelectedDateLabel,
+} from "@/lib/date";
+import {
   buildMarkerDateKeysForMonth,
   buildTaskListItemsForDate,
   matchesRecurringRule,
 } from "@/lib/recurrence";
+import {
+  playSoundEffect,
+  primeAudioContext,
+  resetSoundEngineForTest,
+} from "@/lib/sound";
 import type { RecurringOverride, RecurringRule, Task } from "@/lib/types";
+
+test.afterEach(() => {
+  resetSoundEngineForTest();
+
+  if ("window" in globalThis) {
+    Reflect.deleteProperty(globalThis, "window");
+  }
+});
+
+test("formats month and selected date labels in Japanese", () => {
+  const date = new Date(2026, 2, 14);
+
+  expect(formatMonthLabel(date)).toBe("2026年 3月");
+  expect(formatSelectedDateLabel(date)).toBe("3月14日 土");
+});
 
 test("matches daily and weekly recurring rules against dates", () => {
   const dailyRule: RecurringRule = {
@@ -137,4 +161,55 @@ test("builds month markers from manual and recurring tasks while ignoring dismis
   expect(markerDateKeys).toContain("2026-03-09");
   expect(markerDateKeys).toContain("2026-03-23");
   expect(markerDateKeys).not.toContain("2026-03-16");
+});
+
+test("primes and plays sound effects when AudioContext is available", async () => {
+  class MockGainNode {
+    gain = {
+      setValueAtTime() {},
+      linearRampToValueAtTime() {},
+      exponentialRampToValueAtTime() {},
+    };
+
+    connect() {}
+  }
+
+  class MockOscillator {
+    type: OscillatorType = "sine";
+    frequency = {
+      setValueAtTime() {},
+    };
+
+    connect() {}
+    start() {}
+    stop() {}
+  }
+
+  class MockAudioContext {
+    state: AudioContextState = "suspended";
+    currentTime = 0;
+    destination = {};
+
+    createGain() {
+      return new MockGainNode() as unknown as GainNode;
+    }
+
+    createOscillator() {
+      return new MockOscillator() as unknown as OscillatorNode;
+    }
+
+    async resume() {
+      this.state = "running";
+    }
+  }
+
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    value: {
+      AudioContext: MockAudioContext,
+    } as unknown as Window & typeof globalThis,
+  });
+
+  await expect(primeAudioContext()).resolves.toBe(true);
+  await expect(playSoundEffect("toggle")).resolves.toBe(true);
 });

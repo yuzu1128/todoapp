@@ -48,20 +48,20 @@ export function CalendarScene() {
   } = useCalendarController();
 
   return (
-    <div className="space-y-6" data-testid="calendar-page">
-      <section className="overflow-hidden rounded-[36px] border border-white/10 bg-[linear-gradient(145deg,rgba(10,18,34,0.95),rgba(6,10,22,0.9))] shadow-[0_34px_90px_-42px_rgba(12,242,255,0.3)]">
-        <div className="relative flex flex-col gap-5 px-5 py-6 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8">
+    <div className="space-y-5" data-testid="calendar-page">
+      <section className="overflow-hidden rounded-[34px] border border-white/10 bg-[linear-gradient(145deg,rgba(10,18,34,0.95),rgba(6,10,22,0.9))] shadow-[0_34px_90px_-42px_rgba(12,242,255,0.3)]">
+        <div className="relative flex flex-col gap-4 px-5 py-5 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-[0.68rem] uppercase tracking-[0.32em] text-cyan-200">
               <CalendarRange className="h-3.5 w-3.5" />
               Calendar Grid
             </div>
-            <h1 className="mt-4 font-display text-3xl tracking-[0.16em] text-white sm:text-4xl">
+            <h1 className="mt-3 font-display text-3xl tracking-[0.16em] text-white sm:text-4xl">
               Date Matrix
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
-              日付セル、選択ヘッダー、タスクリストを同じビジュアル言語で統一しました。
-              カレンダーマーカーには手動タスクと繰り返しタスクの両方が反映されます。
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
+              カレンダーと選択日の一覧を同じ画面で確認できます。手動タスクと
+              繰り返しタスクの両方が月マーカーへ反映されます。
             </p>
           </div>
 
@@ -82,20 +82,8 @@ export function CalendarScene() {
         </div>
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
-        <Card className="rounded-[32px] border-white/10 bg-[rgba(8,14,27,0.88)] shadow-[0_28px_60px_-38px_rgba(12,242,255,0.28)]">
-          <CardContent className="p-5 sm:p-6">
-            <CalendarView
-              currentMonth={currentMonth}
-              markerDateKeys={markerDateKeys}
-              onDateSelect={handleDateSelect}
-              onMonthChange={setCurrentMonth}
-              selectedDate={selectedDate}
-            />
-          </CardContent>
-        </Card>
-
-        <div className="space-y-6">
+      <section className="grid gap-5 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
+        <div className="order-1 space-y-5 lg:order-2">
           <DateHeader
             completedTasks={completedTaskCount}
             onTodayClick={handleTodayClick}
@@ -127,11 +115,24 @@ export function CalendarScene() {
                   isMutating={mutating}
                   onDeleteTask={handleDeleteTask}
                   onToggleTask={handleToggleTask}
+                  scrollClassName="lg:max-h-[42rem]"
                 />
               )}
             </CardContent>
           </Card>
         </div>
+
+        <Card className="order-2 rounded-[32px] border-white/10 bg-[rgba(8,14,27,0.88)] shadow-[0_28px_60px_-38px_rgba(12,242,255,0.28)] lg:order-1">
+          <CardContent className="p-5 sm:p-6">
+            <CalendarView
+              currentMonth={currentMonth}
+              markerDateKeys={markerDateKeys}
+              onDateSelect={handleDateSelect}
+              onMonthChange={setCurrentMonth}
+              selectedDate={selectedDate}
+            />
+          </CardContent>
+        </Card>
       </section>
 
       <AddTaskDialog

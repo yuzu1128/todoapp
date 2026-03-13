@@ -48,24 +48,24 @@ export function HomeScene() {
   const [draftTitle, setDraftTitle] = useState("");
 
   return (
-    <div className="space-y-6">
-      <section className="overflow-hidden rounded-[36px] border border-white/10 bg-[linear-gradient(145deg,rgba(10,18,34,0.95),rgba(6,10,22,0.9))] shadow-[0_34px_90px_-42px_rgba(12,242,255,0.35)]">
+    <div className="space-y-5">
+      <section className="overflow-hidden rounded-[34px] border border-white/10 bg-[linear-gradient(145deg,rgba(10,18,34,0.95),rgba(6,10,22,0.9))] shadow-[0_34px_90px_-42px_rgba(12,242,255,0.35)]">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(12,242,255,0.14),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.14),transparent_34%)]" />
-        <div className="relative grid gap-6 px-5 py-6 sm:px-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] lg:px-8">
+        <div className="relative grid gap-4 px-5 py-5 sm:px-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)] lg:px-8">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-[0.68rem] uppercase tracking-[0.32em] text-cyan-200">
               <Sparkles className="h-3.5 w-3.5" />
               Home Nexus
             </div>
-            <h1 className="mt-4 font-display text-3xl tracking-[0.16em] text-white sm:text-4xl">
+            <h1 className="mt-3 font-display text-3xl tracking-[0.16em] text-white sm:text-4xl">
               Today&apos;s Command Center
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
               今日の予定、履歴、完了率を1画面で確認できます。タスクは手動追加と
               繰り返しルールの両方に対応しています。
             </p>
 
-            <div className="mt-6 flex flex-wrap items-center gap-3">
+            <div className="mt-4 flex flex-wrap items-center gap-3">
               <Button
                 className="rounded-full bg-[linear-gradient(135deg,rgba(12,242,255,0.96),rgba(59,130,246,0.9))] px-5 text-slate-950 shadow-[0_24px_50px_-24px_rgba(12,242,255,0.8)]"
                 data-testid="open-add-task-dialog"
@@ -84,7 +84,7 @@ export function HomeScene() {
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+          <div className="grid grid-cols-3 gap-3">
             {[
               {
                 icon: Radar,
@@ -96,32 +96,32 @@ export function HomeScene() {
                 icon: ListTodo,
                 label: "Queue",
                 value: `${totalTasks}`,
-                detail: "今日の総タスク数",
+                detail: "総タスク数",
               },
               {
                 icon: Cpu,
-                label: "History",
+                label: "Memory",
                 value: `${recentTitles.length}`,
-                detail: "最近使った候補",
+                detail: "履歴候補",
               },
             ].map((item) => (
               <Card
                 key={item.label}
-                className="overflow-hidden rounded-[28px] border-white/10 bg-white/[0.04] shadow-none"
+                className="overflow-hidden rounded-[24px] border-white/10 bg-white/[0.04] shadow-none"
               >
-                <CardContent className="flex items-center gap-4 p-5">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-[20px] border border-cyan-300/20 bg-cyan-400/10 text-cyan-200">
-                    <item.icon className="h-5 w-5" />
+                <CardContent className="p-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-[18px] border border-cyan-300/20 bg-cyan-400/10 text-cyan-200">
+                    <item.icon className="h-4.5 w-4.5" />
                   </div>
-                  <div>
-                    <p className="text-[0.68rem] uppercase tracking-[0.28em] text-slate-500">
-                      {item.label}
-                    </p>
-                    <p className="mt-1 font-display text-2xl tracking-[0.1em] text-white">
-                      {item.value}
-                    </p>
-                    <p className="mt-1 text-xs text-slate-400">{item.detail}</p>
-                  </div>
+                  <p className="mt-3 text-[0.62rem] uppercase tracking-[0.26em] text-slate-500">
+                    {item.label}
+                  </p>
+                  <p className="mt-1 font-display text-xl tracking-[0.08em] text-white">
+                    {item.value}
+                  </p>
+                  <p className="mt-1 text-[0.7rem] leading-5 text-slate-400">
+                    {item.detail}
+                  </p>
                 </CardContent>
               </Card>
             ))}
@@ -129,7 +129,7 @@ export function HomeScene() {
         </div>
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_360px]">
+      <section className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_340px]">
         <Card className="rounded-[32px] border-white/10 bg-[rgba(8,14,27,0.88)] shadow-[0_28px_60px_-38px_rgba(12,242,255,0.28)]">
           <CardContent className="p-5 sm:p-6">
             <div className="mb-5 flex items-start justify-between gap-4">
@@ -173,7 +173,7 @@ export function HomeScene() {
           </CardContent>
         </Card>
 
-        <div className="space-y-6">
+        <div className="space-y-5">
           <Card className="rounded-[32px] border-white/10 bg-[rgba(8,14,27,0.88)] shadow-none">
             <CardContent className="p-5">
               <p className="text-[0.72rem] uppercase tracking-[0.28em] text-slate-500">

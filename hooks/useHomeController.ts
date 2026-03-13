@@ -35,8 +35,8 @@ export function useHomeController() {
     void initialize(todayKey);
   }, [initialize, todayKey]);
 
-  const activeItems = items.filter((item) => !item.completed).slice(0, 5);
-  const completedItems = items.filter((item) => item.completed).slice(0, 3);
+  const activeItems = items.filter((item) => !item.completed);
+  const completedItems = items.filter((item) => item.completed);
 
   return {
     activeItems,

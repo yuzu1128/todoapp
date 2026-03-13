@@ -16,6 +16,7 @@ interface TaskListProps {
   isMutating?: boolean;
   onDeleteTask: (item: TaskListItem) => Promise<unknown> | unknown;
   onToggleTask: (item: TaskListItem) => Promise<unknown> | unknown;
+  scrollClassName?: string;
 }
 
 interface TaskSectionProps {
@@ -91,8 +92,8 @@ function TaskSection({
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-black/20">
                 <Checkbox
                   checked={item.completed}
-                  className="h-5 w-5 rounded-md border-slate-500 data-[state=checked]:border-cyan-300 data-[state=checked]:bg-cyan-300 data-[state=checked]:text-slate-950"
                   aria-label={`${item.title}の完了状態を切り替える`}
+                  className="h-5 w-5 rounded-md border-slate-500 data-[state=checked]:border-cyan-300 data-[state=checked]:bg-cyan-300 data-[state=checked]:text-slate-950"
                   disabled={isMutating}
                   onCheckedChange={() => onToggleTask(item)}
                 />
@@ -120,12 +121,12 @@ function TaskSection({
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-2xl text-slate-400 hover:bg-rose-400/10 hover:text-rose-200"
                 aria-label={
                   item.source === "manual"
                     ? `${item.title}を削除`
                     : `${item.title}をこの日だけ非表示`
                 }
+                className="rounded-2xl text-slate-400 hover:bg-rose-400/10 hover:text-rose-200"
                 disabled={isMutating}
                 onClick={() => onDeleteTask(item)}
               >
@@ -145,6 +146,7 @@ export function TaskList({
   isMutating = false,
   onDeleteTask,
   onToggleTask,
+  scrollClassName,
 }: TaskListProps) {
   if (activeItems.length === 0 && completedItems.length === 0) {
     return (
@@ -159,38 +161,46 @@ export function TaskList({
           No Tasks Online
         </h3>
         <p className="mt-2 text-sm leading-6 text-slate-400">
-          まだ予定がありません。下の追加ボタンから今日のタスクを登録してください。
+          まだ予定がありません。追加ボタンから今日のタスクを登録してください。
         </p>
       </div>
     );
   }
 
+  const content = (
+    <div className="space-y-6">
+      <TaskSection
+        title="Active Queue"
+        description="これから着手するタスクです。"
+        emptyMessage="未完了タスクはありません。新しい予定を追加するか、完了済みの履歴を確認してください。"
+        icon={<Clock3 className="h-4 w-4" />}
+        isMutating={isMutating}
+        items={activeItems}
+        onDeleteTask={onDeleteTask}
+        onToggleTask={onToggleTask}
+        testId="active-task-section"
+      />
+      <TaskSection
+        title="Completed Log"
+        description="完了したタスクがここに移動します。"
+        emptyMessage="完了済みのタスクはまだありません。"
+        icon={<CheckCircle2 className="h-4 w-4" />}
+        isMutating={isMutating}
+        items={completedItems}
+        onDeleteTask={onDeleteTask}
+        onToggleTask={onToggleTask}
+        testId="completed-task-section"
+      />
+    </div>
+  );
+
+  if (!scrollClassName) {
+    return content;
+  }
+
   return (
-    <ScrollArea className="h-[420px] pr-3">
-      <div className="space-y-6">
-        <TaskSection
-          title="Active Queue"
-          description="これから処理するタスクです。"
-          emptyMessage="未完了タスクはありません。新しい予定を追加するか、完了済みの履歴を確認してください。"
-          icon={<Clock3 className="h-4 w-4" />}
-          isMutating={isMutating}
-          items={activeItems}
-          onDeleteTask={onDeleteTask}
-          onToggleTask={onToggleTask}
-          testId="active-task-section"
-        />
-        <TaskSection
-          title="Completed Log"
-          description="完了したタスクがここに移動します。"
-          emptyMessage="完了済みのタスクはまだありません。"
-          icon={<CheckCircle2 className="h-4 w-4" />}
-          isMutating={isMutating}
-          items={completedItems}
-          onDeleteTask={onDeleteTask}
-          onToggleTask={onToggleTask}
-          testId="completed-task-section"
-        />
-      </div>
+    <ScrollArea className={cn("pr-3", scrollClassName)}>
+      {content}
     </ScrollArea>
   );
 }

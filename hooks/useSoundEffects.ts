@@ -6,7 +6,6 @@ import { playSoundEffect, primeAudioContext } from "@/lib/sound";
 import { useSettingsStore } from "@/stores/settingsStore";
 
 export function useSoundEffects() {
-  const soundEnabled = useSettingsStore((state) => state.soundEnabled);
   const initializeSettings = useSettingsStore((state) => state.initialize);
   const initialized = useSettingsStore((state) => state.initialized);
 
@@ -32,7 +31,7 @@ export function useSoundEffects() {
 
   return {
     play: (name: Parameters<typeof playSoundEffect>[0]) => {
-      if (!soundEnabled) {
+      if (!useSettingsStore.getState().soundEnabled) {
         return;
       }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { DayPicker } from "react-day-picker";
+import { ja } from "date-fns/locale";
 
 import { buttonVariants } from "@/components/ui/button";
 import {
@@ -50,14 +51,14 @@ export function CalendarView({
           height: 0.42rem;
           border-radius: 9999px;
           transform: translateX(-50%);
-          background: linear-gradient(135deg, rgba(12,242,255,1), rgba(59,130,246,1));
-          box-shadow: 0 0 18px rgba(12,242,255,0.8);
+          background: linear-gradient(135deg, rgba(12, 242, 255, 1), rgba(59, 130, 246, 1));
+          box-shadow: 0 0 18px rgba(12, 242, 255, 0.8);
         }
 
         .calendar-day_has-marker button[aria-selected="true"]::after,
         button.calendar-day_has-marker[aria-selected="true"]::after {
           background: white;
-          box-shadow: 0 0 18px rgba(255,255,255,0.7);
+          box-shadow: 0 0 18px rgba(255, 255, 255, 0.7);
         }
       `}</style>
 
@@ -65,6 +66,18 @@ export function CalendarView({
         mode="single"
         className="text-slate-100"
         disabled={{ before: today }}
+        formatters={{
+          formatCaption: formatMonthLabel,
+          formatWeekdayName: formatWeekdayLabel,
+        }}
+        locale={ja}
+        modifiers={{
+          hasMarker: (date) => markerSet.has(toDateKey(date)),
+          isToday: (date) => isTodayDateKey(toDateKey(date)),
+        }}
+        modifiersClassNames={{
+          hasMarker: "calendar-day_has-marker",
+        }}
         month={currentMonth}
         onMonthChange={onMonthChange}
         onSelect={(date) => {
@@ -74,25 +87,13 @@ export function CalendarView({
         }}
         selected={selectedDate}
         showOutsideDays={false}
-        modifiers={{
-          hasMarker: (date) => markerSet.has(toDateKey(date)),
-          isToday: (date) => isTodayDateKey(toDateKey(date)),
-        }}
-        modifiersClassNames={{
-          hasMarker: "calendar-day_has-marker",
-        }}
-        formatters={{
-          formatCaption: formatMonthLabel,
-          formatWeekdayName: formatWeekdayLabel,
-        }}
         classNames={{
           root: "w-full",
           months: "flex flex-col",
           month: "space-y-4",
           month_caption:
             "relative flex items-center justify-center rounded-[26px] border border-white/10 bg-white/[0.03] px-3 py-3",
-          caption_label:
-            "font-display text-lg tracking-[0.16em] text-white",
+          caption_label: "font-display text-lg tracking-[0.16em] text-white",
           nav: "absolute inset-x-0 top-1/2 flex -translate-y-1/2 items-center justify-between px-2",
           button_previous: cn(
             buttonVariants({ variant: "ghost", size: "icon" }),
@@ -114,8 +115,7 @@ export function CalendarView({
           ),
           selected:
             "border-cyan-300/30 bg-[linear-gradient(135deg,rgba(12,242,255,0.18),rgba(59,130,246,0.25))] text-white shadow-[0_0_24px_-10px_rgba(12,242,255,0.8)] hover:text-white",
-          today:
-            "border-white/10 bg-white/[0.06] text-cyan-200",
+          today: "border-white/10 bg-white/[0.06] text-cyan-200",
           disabled:
             "cursor-not-allowed border-transparent bg-transparent text-slate-700 opacity-50",
           hidden: "invisible",

@@ -18,6 +18,24 @@ test.beforeEach(async ({ page }) => {
   ).toBeVisible();
 });
 
+test("shows all tasks on home without truncating after six additions", async ({
+  page,
+}) => {
+  for (const title of [
+    "Task 1",
+    "Task 2",
+    "Task 3",
+    "Task 4",
+    "Task 5",
+    "Task 6",
+  ]) {
+    await addTask(page, title);
+  }
+
+  await expect(page.getByTestId("active-task-section")).toContainText("Task 6");
+  await expect(page.getByTestId("task-item")).toHaveCount(6);
+});
+
 test("switches tabs and persists the sound setting after reload", async ({
   page,
 }) => {
@@ -59,6 +77,26 @@ test("creates a manual task and reuses it from history chips", async ({ page }) 
   await expect(page.getByTestId("task-title-input")).toHaveValue("History seed");
 });
 
+test("renders calendar labels in natural Japanese", async ({ page }) => {
+  await gotoTab(page, "calendar");
+
+  await expect(page.getByTestId("calendar-view").getByRole("status")).toContainText(
+    /^\d{4}年 \d+月$/
+  );
+  await expect(page.getByTestId("date-header")).toContainText(/\d+月\d+日/);
+});
+
+test("keeps the selected day task list visible on first mobile viewport", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/calendar");
+
+  await expect(page.getByTestId("date-header")).toBeVisible();
+  await expect(page.getByTestId("task-list-empty")).toBeVisible();
+  await expect(page.getByTestId("task-list-empty")).toBeInViewport();
+});
+
 test("creates a daily recurring rule and keeps completion per day", async ({
   page,
 }) => {
@@ -98,7 +136,8 @@ test("creates a weekly recurring rule, shows only matching weekdays, and skips o
 }) => {
   const targetDate = getNextWeekday(1);
   const nextOccurrence = getNextWeekday(1, 1);
-  const nonMatchingDate = getFutureDate(1).getDay() === 1 ? getFutureDate(2) : getFutureDate(1);
+  const nonMatchingDate =
+    getFutureDate(1).getDay() === 1 ? getFutureDate(2) : getFutureDate(1);
 
   await gotoTab(page, "settings");
   await page.locator("#recurring-title").fill("Weekly review");
