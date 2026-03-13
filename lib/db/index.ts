@@ -1,5 +1,6 @@
-import Dexie, { Table } from 'dexie';
-import type { Task } from '../types';
+import Dexie, { Table } from "dexie";
+
+import type { Task } from "../types";
 
 /**
  * ToDoApp database schema
@@ -8,9 +9,9 @@ class ToDoAppDatabase extends Dexie {
   tasks!: Table<Task, string>;
 
   constructor() {
-    super('ToDoAppDB');
+    super("ToDoAppDB");
     this.version(1).stores({
-      tasks: 'id, date, completed, createdAt',
+      tasks: "id, date, completed, createdAt",
     });
   }
 }
@@ -22,26 +23,24 @@ export const db = new ToDoAppDatabase();
  */
 export const taskRepository = {
   /**
-   * Get all tasks
+   * Get the unique dates that have at least one task
    */
-  async getAll(): Promise<Task[]> {
-    return await db.tasks.toArray();
+  async getTaskDates(): Promise<string[]> {
+    const keys = await db.tasks.orderBy("date").uniqueKeys();
+    return keys.map((key) => String(key));
   },
 
   /**
    * Get tasks for a specific date
    */
   async getByDate(date: string): Promise<Task[]> {
-    return await db.tasks
-      .where('date')
-      .equals(date)
-      .sortBy('createdAt');
+    return await db.tasks.where("date").equals(date).sortBy("createdAt");
   },
 
   /**
    * Add a new task
    */
-  async add(task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+  async add(task: Omit<Task, "id" | "createdAt" | "updatedAt">): Promise<string> {
     const now = Date.now();
     const newTask: Task = {
       ...task,
@@ -49,6 +48,7 @@ export const taskRepository = {
       createdAt: now,
       updatedAt: now,
     };
+
     await db.tasks.add(newTask);
     return newTask.id;
   },
@@ -58,8 +58,12 @@ export const taskRepository = {
    */
   async toggle(id: string): Promise<void> {
     const task = await db.tasks.get(id);
+
     if (task) {
-      await db.tasks.update(id, { completed: !task.completed, updatedAt: Date.now() });
+      await db.tasks.update(id, {
+        completed: !task.completed,
+        updatedAt: Date.now(),
+      });
     }
   },
 

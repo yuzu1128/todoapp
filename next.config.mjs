@@ -1,15 +1,13 @@
-import withPWA from "next-pwa";
+import path from "path";
+import { fileURLToPath } from "url";
 
-const pwaConfig = withPWA({
-  dest: "public",
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === "development",
-});
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const nextConfig = pwaConfig({
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   output: "export",
   images: { unoptimized: true },
-});
+  outputFileTracingRoot: __dirname,
+};
 
 export default nextConfig;

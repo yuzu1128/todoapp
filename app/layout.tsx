@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+
+import { PwaRegister } from "@/components/pwa/PwaRegister";
+
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -21,9 +24,7 @@ export const metadata: Metadata = {
       { url: "/icon/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icon/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
-    apple: [
-      { url: "/icon/icon-192.png", sizes: "192x192", type: "image/png" },
-    ],
+    apple: [{ url: "/icon/icon-192.png", sizes: "192x192", type: "image/png" }],
   },
 };
 
@@ -34,7 +35,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <PwaRegister />
+        {children}
+      </body>
     </html>
   );
 }

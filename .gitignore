@@ -5,12 +5,15 @@ node_modules
 
 # Testing
 coverage
+playwright-report/
+test-results/
 
 # Next.js
 .next/
 out/
-build
-dist
+build/
+dist/
+.next/cache/webpack/client-production/0.pack
 
 # Debug
 npm-debug.log*
